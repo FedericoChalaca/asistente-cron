@@ -1,0 +1,26 @@
+# Respaldo de los avisos del asistente: cuando el PC está apagado, esto hace
+# que el servidor envíe los recordatorios vencidos. No hay secretos en este
+# repo: la dirección y la clave viven cifradas en Settings > Secrets.
+name: Despachar avisos
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  despachar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Pedir al servidor que envíe los avisos vencidos
+        env:
+          DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          codigo=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$DISPATCH_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" --max-time 30)
+          echo "Respuesta: $codigo"
+          test "$codigo" = "200"
